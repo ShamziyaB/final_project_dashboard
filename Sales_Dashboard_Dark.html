@@ -1,0 +1,330 @@
+<meta charset="utf-8">
+<title>Retail Sales Analytics — Dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --bg:#0A0F1C; --bg2:#0E1527; --panel:#121C30; --panel2:#16223A; --line:#243349;
+  --ink:#EAF1FF; --muted:#7E8DA6; --dim:#5A6A85;
+  --cyan:#2DE2C5; --pink:#FF5C8A; --gold:#FFB454; --violet:#8B7BFF; --lime:#9BE564; --blue:#4DA3FF;
+  --pos:#3DF5A0; --neg:#FF6B6B;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Sora',sans-serif;color:var(--ink);
+  background:
+   radial-gradient(900px 480px at 12% -8%, rgba(45,226,197,.10), transparent 60%),
+   radial-gradient(900px 480px at 90% 0%, rgba(255,92,138,.10), transparent 55%),
+   var(--bg);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 22px 60px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:16px}
+.brand h1{font-weight:800;font-size:34px;margin:0;letter-spacing:-.5px;
+  background:linear-gradient(90deg,#fff,#9be5ff 60%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .sub{color:var(--muted);font-size:13.5px;margin-top:6px}
+.period{text-align:right;font-size:12px;color:var(--dim);font-family:'Space Mono';line-height:1.6}
+.period b{color:var(--cyan)}
+nav.tabs{display:flex;gap:5px;flex-wrap:wrap;margin:20px 0 18px;background:var(--panel);
+  padding:6px;border-radius:14px;border:1px solid var(--line);position:sticky;top:10px;z-index:6}
+nav.tabs button{flex:1;min-width:140px;border:0;background:transparent;cursor:pointer;color:var(--muted);
+  font-family:'Sora';font-weight:700;font-size:13px;padding:11px;border-radius:9px;transition:.18s}
+nav.tabs button:hover{color:var(--ink);background:var(--panel2)}
+nav.tabs button.on{background:linear-gradient(90deg,var(--cyan),#23b9d6);color:#04121a}
+.page{display:none;animation:fade .35s ease}.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lead{font-size:14.5px;color:var(--muted);max-width:780px;margin:4px 0 18px;line-height:1.6}
+.lead b{color:var(--ink)}
+.slicer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.slicer .lab{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);font-weight:700;margin-right:4px}
+.slicer button{border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;
+  font-family:'Space Mono';font-weight:700;font-size:13px;padding:7px 15px;border-radius:9px;transition:.15s}
+.slicer button:hover{border-color:var(--cyan);color:var(--ink)}
+.slicer button.on{background:var(--cyan);color:#04121a;border-color:var(--cyan);box-shadow:0 0 18px rgba(45,226,197,.4)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:22px}
+.kpi{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:14px;padding:15px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;height:3px;width:100%;background:var(--cyan)}
+.kpi:nth-child(2)::before{background:var(--gold)}.kpi:nth-child(3)::before{background:var(--pink)}
+.kpi:nth-child(4)::before{background:var(--violet)}.kpi:nth-child(5)::before{background:var(--lime)}
+.kpi:nth-child(6)::before{background:var(--blue)}
+.kpi .lab{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700}
+.kpi .val{font-weight:800;font-size:24px;margin-top:7px;line-height:1;font-family:'Space Mono'}
+.kpi .note{font-size:11px;color:var(--dim);margin-top:5px}
+.grid{display:grid;gap:15px;margin-bottom:15px}
+.g2{grid-template-columns:1.4fr 1fr}.g2e{grid-template-columns:1fr 1fr}.g1{grid-template-columns:1fr}
+.card{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:16px;padding:17px 19px}
+.card h3{font-weight:700;font-size:17px;margin:0 0 3px}
+.card .cs{font-size:12px;color:var(--dim);margin-bottom:14px}
+.chartbox{position:relative;height:285px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--panel2);color:var(--cyan);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+tbody tr:hover{background:rgba(45,226,197,.05)}
+td{font-family:'Space Mono';color:var(--ink)}
+td:first-child{font-family:'Sora'}
+td.pos{color:var(--pos);font-weight:700}td.neg{color:var(--neg);font-weight:700}
+.callout{background:linear-gradient(110deg,#101a2e,#0d2233);border:1px solid var(--line);
+  border-radius:16px;padding:20px 22px;margin-bottom:15px;position:relative;overflow:hidden}
+.callout::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;
+  background:radial-gradient(circle,rgba(45,226,197,.18),transparent 70%)}
+.callout .t{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);font-weight:700}
+.callout .big{font-weight:800;font-size:25px;margin:7px 0 5px;font-family:'Space Mono'}
+.callout .r{color:var(--neg)}.callout .g{color:var(--pos)}
+.foot{margin-top:28px;text-align:center;font-size:11.5px;color:var(--dim);font-family:'Space Mono'}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}.g2,.g2e{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="brand"><h1>Retail Sales Analytics</h1>
+    <div class="sub">Superstore · Furniture · продажи и прибыль 2014–2017</div></div>
+  <div class="period">PERIOD <b>2014–2017</b><br>2,120 sales · 1,764 orders<br>707 customers · 375 products</div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="on" data-p="overview">Overview</button>
+  <button data-p="regional">Regional Analysis</button>
+  <button data-p="customers">Customers</button>
+  <button data-p="products">Products &amp; Discounts</button>
+  <button data-p="sql">SQL Results</button>
+</nav>
+
+<!-- OVERVIEW -->
+<section class="page on" id="overview">
+  <div class="slicer" id="yearSlicer">
+    <span class="lab">Year</span>
+    <button class="on" data-y="all">All</button>
+    <button data-y="2014">2014</button><button data-y="2015">2015</button>
+    <button data-y="2016">2016</button><button data-y="2017">2017</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid g2">
+    <div class="card"><h3>Revenue by Month</h3><div class="cs" id="csMonth">Помесячная выручка · пики: сен, ноя, дек</div>
+      <div class="chartbox"><canvas id="cMonth"></canvas></div></div>
+    <div class="card"><h3>Revenue by Region</h3><div class="cs">Доля регионов</div>
+      <div class="chartbox"><canvas id="cRegionD"></canvas></div></div>
+  </div>
+  <div class="grid g1">
+    <div class="card"><h3>Profit by Sub-Category</h3><div class="cs">Подписи — прибыль в $ · красное = убыток</div>
+      <div class="chartbox"><canvas id="cSub"></canvas></div></div>
+  </div>
+</section>
+
+<!-- REGIONAL -->
+<section class="page" id="regional">
+  <p class="lead"><b>East</b> — 60% оборота и большая часть прибыли. <b>Central</b> — самая высокая средняя скидка.</p>
+  <div class="grid g2e">
+    <div class="card"><h3>Revenue &amp; Profit by Region</h3><div class="cs">Сравнение по регионам</div>
+      <div class="chartbox"><canvas id="cRegion"></canvas></div></div>
+    <div class="card"><h3>Avg Discount by Region</h3><div class="cs">%</div>
+      <div class="chartbox"><canvas id="cDiscR"></canvas></div></div>
+  </div>
+  <div class="grid g1"><div class="card"><h3>Region detail</h3><table id="tRegion"></table></div></div>
+  <div class="grid g1"><div class="card"><h3>Top 10 Cities by Revenue</h3><div class="cs">Philadelphia убыточна</div><table id="tCity"></table></div></div>
+</section>
+
+<!-- CUSTOMERS -->
+<section class="page" id="customers">
+  <p class="lead"><b>Consumer</b> — максимум выручки, минимум маржи. <b>Corporate</b> — самый выгодный сегмент.</p>
+  <div class="grid g2e">
+    <div class="card"><h3>Revenue by Segment</h3><div class="cs">Подписи — выручка $</div>
+      <div class="chartbox"><canvas id="cSeg"></canvas></div></div>
+    <div class="card"><h3>Avg Order Value by Segment</h3><div class="cs">$</div>
+      <div class="chartbox"><canvas id="cAOV"></canvas></div></div>
+  </div>
+  <div class="grid g1"><div class="card"><h3>Top 10 Loyal Customers</h3><div class="cs">Часть лояльных клиентов убыточна</div><table id="tCust"></table></div></div>
+  <div class="grid g1"><div class="card"><h3>Profit by Ship Mode</h3><table id="tShip"></table></div></div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="page" id="products">
+  <div class="callout"><div class="t">Ключевой инсайт</div>
+    <div class="big">Без скидки <span class="g">+$58,133</span> &nbsp;·&nbsp; Со скидкой <span class="r">−$39,670</span></div>
+    <div style="font-size:13px;color:var(--muted)">Вся прибыль — на товарах без скидки. Корреляция скидка↔прибыль = −0.48. Со скидки 30% продажи убыточны.</div></div>
+  <div class="grid g2e">
+    <div class="card"><h3>Profit by Discount Level</h3><div class="cs">Подписи — прибыль $</div>
+      <div class="chartbox"><canvas id="cDisc"></canvas></div></div>
+    <div class="card"><h3>Profit vs Discount</h3><div class="cs">Размер пузыря = выручка</div>
+      <div class="chartbox"><canvas id="cScatter"></canvas></div></div>
+  </div>
+  <div class="grid g2e">
+    <div class="card"><h3>Top 5 Products by Revenue</h3><table id="tProd"></table></div>
+    <div class="card"><h3>Discount Frequency by Sub-Cat</h3><div class="cs">% позиций со скидкой</div>
+      <div class="chartbox"><canvas id="cFreq"></canvas></div></div>
+  </div>
+  <div class="grid g1"><div class="card"><h3>Loss-Making Products (Top 10)</h3><div class="cs">В основном Tables с высокой скидкой</div><table id="tLoss"></table></div></div>
+</section>
+
+<!-- SQL -->
+<section class="page" id="sql">
+  <p class="lead">Результаты SQL-запросов из BigQuery — основа всех визуализаций.</p>
+  <div class="grid g2e">
+    <div class="card"><h3>Q1 · Top 5 Products by Revenue</h3><table id="q1"></table></div>
+    <div class="card"><h3>Q2 · Average Discount by Region</h3><table id="q2"></table></div>
+  </div>
+  <div class="grid g2e">
+    <div class="card"><h3>Q3 · Most Loyal Customers</h3><table id="q3"></table></div>
+    <div class="card"><h3>Q4 · Profit by Sub-Category</h3><table id="q4"></table></div>
+  </div>
+  <div class="grid g1"><div class="card"><h3>Q5 · Share of Discounted Sales</h3><table id="q5"></table></div></div>
+</section>
+
+<div class="foot">DARK EDITION · интерактивный дашборд-компаньон к Power BI · Superstore Furniture 2014–2017</div>
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+const CY='#2DE2C5',PK='#FF5C8A',GD='#FFB454',VI='#8B7BFF',LM='#9BE564',BL='#4DA3FF',POS='#3DF5A0',NEG='#FF6B6B';
+const grid='#1E2C42', tick='#8E9DB8';
+Chart.defaults.font.family="'Sora',sans-serif";Chart.defaults.color=tick;
+const $=id=>document.getElementById(id);
+const usd=v=>'$'+Math.round(v).toLocaleString('en-US');
+const k=v=>(v/1000).toFixed(0)+'k';
+const lab=v=>v<0?'−$'+Math.abs(v).toLocaleString('en-US'):'$'+v.toLocaleString('en-US');
+
+const YR={"all":{"sales":741718,"profit":18463,"margin":2.49,"orders":1764,"customers":707,"aov":420,"region":{"Central":80072,"East":448733,"South":154293,"West":58621},"sub":{"Bookcases":-3473,"Chairs":26602,"Furnishings":13059,"Tables":-17725},"months":[31569,15766,50768,40417,48365,52999,49377,44884,106381,58088,121286,121818]},
+"2014":{"sales":156911,"profit":5470,"margin":3.49,"orders":353,"customers":290,"aov":445,"region":{"Central":14763,"East":97725,"South":33706,"West":10717},"sub":{"Bookcases":-346,"Chairs":6967,"Furnishings":1973,"Tables":-3124},"months":[6243,1840,14574,7663,6913,13206,10821,7320,23816,12304,21565,30646]},
+"2015":{"sales":170518,"profit":3015,"margin":1.77,"orders":371,"customers":289,"aov":460,"region":{"Central":22512,"East":103788,"South":34512,"West":9706},"sub":{"Bookcases":-2755,"Chairs":6228,"Furnishings":3052,"Tables":-3510},"months":[11740,3134,12500,10476,9375,7714,13674,9639,26273,12027,30881,23086]},
+"2016":{"sales":198901,"profit":6960,"margin":3.5,"orders":476,"customers":355,"aov":418,"region":{"Central":19597,"East":121343,"South":39292,"West":18670},"sub":{"Bookcases":212,"Chairs":5763,"Furnishings":3935,"Tables":-2951},"months":[7623,3926,12801,13212,15120,13071,13069,12483,27263,11873,31784,36679]},
+"2017":{"sales":215387,"profit":3018,"margin":1.4,"orders":564,"customers":403,"aov":382,"region":{"Central":23200,"East":125877,"South":46783,"West":19527},"sub":{"Bookcases":-584,"Chairs":7644,"Furnishings":4099,"Tables":-8141},"months":[5964,6866,10893,9066,16958,19009,11813,15442,29028,21884,37057,31407]}};
+
+const D={
+ region:[{n:'East',r:448733,p:13220,m:2.95,d:16.6,o:1056},{n:'South',r:154293,p:3839,m:2.49,d:17.9,o:341},
+         {n:'Central',r:80072,p:1121,m:1.40,d:21.9,o:230},{n:'West',r:58621,p:284,m:0.48,d:14.7,o:137}],
+ city:[['New York City',183097,6109,398],['Philadelphia',83140,-2939,189],['Columbus',19124,574,41],
+       ['Los Angeles',17590,762,46],['Chicago',13879,418,38],['Springfield',12002,1170,23],
+       ['Concord',11628,-2256,18],['Richmond',8981,366,31],['Arlington',8691,-736,13],['Jacksonville',8578,-614,28]],
+ seg:[{n:'Consumer',r:391049,m:1.79,aov:426},{n:'Corporate',r:229020,m:3.31,aov:424},{n:'Home Office',r:121649,m:3.20,aov:396}],
+ cust:[['Seth Vernon','Consumer',9,8332,688],['Joel Eaton','Consumer',8,4423,-332],['Zuschuss Carroll','Consumer',8,3900,529],
+       ['Laura Armstrong','Corporate',7,5387,1146],['Lena Creighton','Consumer',7,2641,-153],['Harry Marie','Corporate',7,1753,-274],
+       ['George Bell','Corporate',7,1197,-15],['Justin Deggeller','Corporate',6,4079,721],['Natalie Fritzler','Consumer',6,4049,212],['Anna Haberlin','Corporate',6,4013,336]],
+ ship:[['Standard Class',435550,10373,2.38,1040],['Second Class',156289,4226,2.70,354],['First Class',110731,3067,2.77,274],['Same Day',39149,797,2.04,96]],
+ disc:[{d:0,r:256025,p:58133},{d:10,r:46634,p:7111},{d:15,r:27559,p:1419},{d:20,r:216631,p:6266},{d:30,r:99189,p:-10683},
+       {d:32,r:14493,p:-2391},{d:40,r:45614,p:-16187},{d:45,r:5485,p:-2493},{d:50,r:20983,p:-12871},{d:60,r:6645,p:-5945},{d:70,r:2459,p:-3895}],
+ prod:[['HON 5400 Task Chairs','Chairs',21871,0],['Riverside Lawyers Bookcase','Bookcases',15611,-670],['Bretford Conference Table Tops','Tables',12995,-327],
+       ['Global Troy Leather Tilter','Chairs',12975,952],['DMI Eclipse Bookcases','Bookcases',12922,20]],
+ freq:[{n:'Chairs',f:78.4},{n:'Tables',f:77.4},{n:'Bookcases',f:73.7},{n:'Furnishings',f:40.3}],
+ loss:[['Chromcraft Oval Conf. Tables','Tables',-2876,28],['Bush Racetrack Conf. Table','Tables',-1934,35],['Balt Solid Wood Round Tables','Tables',-1201,20],
+       ['BoxOffice Meeting Tables','Tables',-1148,48],['Riverside Coffee/End Tables','Tables',-1147,30],['Hon Pillow Soft Chairs','Chairs',-989,22],
+       ["O'Sullivan 4-Shelf Bookcase",'Bookcases',-975,42],['Bretford Work Tables','Tables',-964,22],['Bevis Oval Conf. Table','Tables',-856,28],['BPI Conference Tables','Tables',-796,37]],
+ subFull:[['Chairs',328168,26602,8.11],['Furnishings',91705,13059,14.24],['Bookcases',114880,-3473,-3.02],['Tables',206966,-17725,-8.56]]
+};
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// tables
+const pn=v=>`<td class="${v<0?'neg':'pos'}">${lab(v)}</td>`;
+const td=v=>`<td>${v}</td>`,tdl=v=>`<td>${v}</td>`;
+function fill(id,h,rows){$(id).innerHTML='<thead><tr>'+h.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.join('')+'</tr>').join('')+'</tbody>';}
+fill('tRegion',['Region','Revenue','Profit','Margin','Avg Disc','Orders'],D.region.map(r=>[tdl(r.n),td(usd(r.r)),pn(r.p),td(r.m+'%'),td(r.d+'%'),td(r.o)]));
+fill('tCity',['City','Revenue','Profit','Orders'],D.city.map(c=>[tdl(c[0]),td(usd(c[1])),pn(c[2]),td(c[3])]));
+fill('tCust',['Customer','Segment','Orders','Spent','Profit'],D.cust.map(c=>[tdl(c[0]),tdl(c[1]),td(c[2]),td(usd(c[3])),pn(c[4])]));
+fill('tShip',['Ship Mode','Revenue','Profit','Margin','Orders'],D.ship.map(s=>[tdl(s[0]),td(usd(s[1])),pn(s[2]),td(s[3]+'%'),td(s[4])]));
+fill('tProd',['Product','Sub-Cat','Revenue','Profit'],D.prod.map(p=>[tdl(p[0]),tdl(p[1]),td(usd(p[2])),pn(p[3])]));
+fill('tLoss',['Product','Sub-Cat','Profit','Avg Disc'],D.loss.map(l=>[tdl(l[0]),tdl(l[1]),pn(l[2]),td(l[3]+'%')]));
+fill('q1',['Product','Sub-Cat','Revenue','Profit'],D.prod.map(p=>[tdl(p[0]),tdl(p[1]),td(usd(p[2])),pn(p[3])]));
+fill('q2',['Region','Avg Discount'],D.region.slice().sort((a,b)=>b.d-a.d).map(r=>[tdl(r.n),td(r.d+'%')]));
+fill('q3',['Customer','Segment','Orders','Spent'],D.cust.slice(0,5).map(c=>[tdl(c[0]),tdl(c[1]),td(c[2]),td(usd(c[3]))]));
+fill('q4',['Sub-Category','Profit','Revenue','Margin'],D.subFull.map(s=>[tdl(s[0]),pn(s[2]),td(usd(s[1])),td(s[3]+'%')]));
+fill('q5',['Metric','Value'],[[tdl('Позиций со скидкой'),td('1,284 / 2,120')],[tdl('Доля позиций со скидкой'),td('60.57%')],[tdl('Выручка со скидкой'),td(usd(485693))],[tdl('Доля выручки со скидкой'),td('65.48%')]]);
+
+const DL={color:'#EAF1FF',font:{family:"'Space Mono'",weight:'700',size:11}};
+const baseScales=()=>({y:{grid:{color:grid},ticks:{callback:k,color:tick},grace:'12%'},x:{grid:{display:false},ticks:{color:tick}}});
+
+// ===== OVERVIEW (year-filtered) =====
+let cMonth,cRegionD,cSub;
+function renderKPIs(d){
+  $('kpis').innerHTML=`
+   <div class="kpi"><div class="lab">Sales</div><div class="val">${usd(d.sales)}</div><div class="note">выручка</div></div>
+   <div class="kpi"><div class="lab">Profit</div><div class="val">${usd(d.profit)}</div><div class="note">прибыль</div></div>
+   <div class="kpi"><div class="lab">Margin</div><div class="val">${d.margin}%</div><div class="note">маржа</div></div>
+   <div class="kpi"><div class="lab">Orders</div><div class="val">${d.orders.toLocaleString()}</div><div class="note">заказов</div></div>
+   <div class="kpi"><div class="lab">Customers</div><div class="val">${d.customers}</div><div class="note">клиентов</div></div>
+   <div class="kpi"><div class="lab">Avg Order</div><div class="val">$${d.aov}</div><div class="note">средний чек</div></div>`;
+}
+function buildOverview(d){
+  cMonth=new Chart($('cMonth'),{type:'line',data:{labels:months,datasets:[{data:d.months,borderColor:CY,
+    backgroundColor:(c)=>{const g=c.chart.ctx.createLinearGradient(0,0,0,285);g.addColorStop(0,'rgba(45,226,197,.35)');g.addColorStop(1,'rgba(45,226,197,0)');return g;},
+    fill:true,tension:.4,borderWidth:3,pointBackgroundColor:CY,pointRadius:3,
+    datalabels:{align:'top',color:CY,font:{family:"'Space Mono'",size:9,weight:'700'},formatter:k}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:baseScales()}});
+  const rk=Object.keys(d.region),rv=rk.map(x=>d.region[x]);
+  cRegionD=new Chart($('cRegionD'),{type:'doughnut',data:{labels:rk,datasets:[{data:rv,
+    backgroundColor:[GD,CY,VI,PK],borderColor:'#0E1527',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{position:'right',labels:{color:'#EAF1FF'}},
+        datalabels:{color:'#04121a',font:{family:"'Space Mono'",weight:'700',size:11},formatter:k}}}});
+  const sk=Object.keys(d.sub),sv=sk.map(x=>d.sub[x]);
+  cSub=new Chart($('cSub'),{type:'bar',data:{labels:sk,datasets:[{data:sv,
+    backgroundColor:sv.map(v=>v<0?NEG:POS),borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{anchor:'end',align:'right',color:'#EAF1FF',
+        font:{family:"'Space Mono'",weight:'700',size:11},formatter:lab,clamp:true}},
+      scales:{x:{grid:{color:grid},ticks:{callback:k,color:tick},grace:'18%'},y:{grid:{display:false},ticks:{color:'#EAF1FF'}}}}});
+}
+function updateOverview(y){
+  const d=YR[y]; renderKPIs(d);
+  cMonth.data.datasets[0].data=d.months; cMonth.update();
+  cRegionD.data.datasets[0].data=Object.values(d.region); cRegionD.update();
+  cSub.data.datasets[0].data=Object.values(d.sub);
+  cSub.data.datasets[0].backgroundColor=Object.values(d.sub).map(v=>v<0?NEG:POS); cSub.update();
+  $('csMonth').textContent = y==='all'?'Помесячная выручка (все годы) · пики: сен, ноя, дек':`Помесячная выручка за ${y} год`;
+}
+renderKPIs(YR.all); buildOverview(YR.all);
+document.querySelectorAll('#yearSlicer button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#yearSlicer button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); updateOverview(b.dataset.y);
+});
+
+// ===== REGIONAL =====
+new Chart($('cRegion'),{type:'bar',data:{labels:D.region.map(r=>r.n),
+  datasets:[{label:'Revenue',data:D.region.map(r=>r.r),backgroundColor:CY,borderRadius:5,
+    datalabels:{color:CY,anchor:'end',align:'top',font:{family:"'Space Mono'",size:9,weight:'700'},formatter:k}},
+   {label:'Profit',data:D.region.map(r=>r.p),backgroundColor:GD,borderRadius:5,
+    datalabels:{color:GD,anchor:'end',align:'top',font:{family:"'Space Mono'",size:9,weight:'700'},formatter:k}}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#EAF1FF'}}},scales:baseScales()}});
+new Chart($('cDiscR'),{type:'bar',data:{labels:D.region.map(r=>r.n),datasets:[{data:D.region.map(r=>r.d),backgroundColor:GD,borderRadius:5,
+  datalabels:{...DL,anchor:'end',align:'top',formatter:v=>v+'%'}}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:grid},ticks:{callback:v=>v+'%',color:tick},grace:'15%'},x:{grid:{display:false},ticks:{color:tick}}}}});
+
+// ===== CUSTOMERS =====
+new Chart($('cSeg'),{type:'doughnut',data:{labels:D.seg.map(s=>s.n),datasets:[{data:D.seg.map(s=>s.r),
+  backgroundColor:[CY,GD,VI],borderColor:'#0E1527',borderWidth:3}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+    plugins:{legend:{position:'right',labels:{color:'#EAF1FF'}},datalabels:{color:'#04121a',font:{family:"'Space Mono'",weight:'700',size:11},formatter:k}}}});
+new Chart($('cAOV'),{type:'bar',data:{labels:D.seg.map(s=>s.n),datasets:[{data:D.seg.map(s=>s.aov),backgroundColor:VI,borderRadius:5,
+  datalabels:{...DL,anchor:'end',align:'top',formatter:v=>'$'+v}}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:grid},ticks:{callback:v=>'$'+v,color:tick},grace:'15%'},x:{grid:{display:false},ticks:{color:tick}}}}});
+
+// ===== PRODUCTS =====
+new Chart($('cDisc'),{type:'bar',data:{labels:D.disc.map(d=>d.d+'%'),datasets:[{data:D.disc.map(d=>d.p),
+  backgroundColor:D.disc.map(d=>d.p<0?NEG:POS),borderRadius:4,
+  datalabels:{color:'#EAF1FF',anchor:d=>d.dataIndex<4?'end':'start',align:d=>d.dataIndex<4?'top':'bottom',
+    font:{family:"'Space Mono'",size:8.5,weight:'700'},formatter:v=>(v/1000).toFixed(0)+'k'}}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>'Profit: '+lab(c.raw)}}},scales:baseScales()}});
+new Chart($('cScatter'),{type:'bubble',data:{datasets:[{data:D.disc.map(d=>({x:d.d,y:d.p,r:Math.max(6,Math.sqrt(d.r)/12)})),
+  backgroundColor:D.disc.map(d=>d.p<0?'rgba(255,107,107,.5)':'rgba(61,245,160,.5)'),
+  borderColor:D.disc.map(d=>d.p<0?NEG:POS),borderWidth:2,
+  datalabels:{color:'#EAF1FF',font:{family:"'Space Mono'",size:9,weight:'700'},formatter:(v,c)=>c.dataset.data[c.dataIndex].x+'%'}}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>`Скидка ${c.raw.x}% · прибыль ${lab(c.raw.y)}`}}},
+    scales:{x:{title:{display:true,text:'Скидка, %',color:tick},grid:{color:grid},ticks:{color:tick}},
+            y:{title:{display:true,text:'Прибыль, $',color:tick},grid:{color:grid},ticks:{callback:k,color:tick}}}}});
+new Chart($('cFreq'),{type:'bar',data:{labels:D.freq.map(f=>f.n),datasets:[{data:D.freq.map(f=>f.f),backgroundColor:PK,borderRadius:5,
+  datalabels:{...DL,anchor:'end',align:'right',formatter:v=>v+'%'}}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:grid},ticks:{callback:v=>v+'%',color:tick},grace:'18%'},y:{grid:{display:false},ticks:{color:'#EAF1FF'}}}}});
+
+// tabs
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$(b.dataset.p).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});
+});
+</script>
